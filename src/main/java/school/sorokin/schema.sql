@@ -1,39 +1,39 @@
-create schema if not exists library;
+create schema if not exists marketplace;
 
-create table if not exists authors (
+create table if not exists customers (
     id serial primary key,
-    author_name varchar(100) unique,
-    birth_date date
+    customers_name varchar(100),
+    email varchar(255)
 );
 
-create table if not exists books (
+create table if not exists products (
     id serial primary key,
-    title varchar(100) not null,
-    page int not null check (page > 0),
-    author_id int not null references authors(id)
+    products_name varchar(255),
+    price numeric(10,2)
 );
 
-create table if not exists readers (
+create table if not exists ordes (
     id serial primary key,
-    reader_name varchar(100) not null,
-    email varchar(100) unique
+    amount numeric(10,2),
+    status text,
+    date_created timestamp not null,
+    customer_id int references customers(id),
+    product_id int references products(id)
 );
 
-create table if not exists rentals (
-    id serial primary key,
-    date_start date default now(),
-    days_rent int not null,
-    date_return date check (date_start < date_return),
-    book_id int not null references books(id),
-    reader_id int not null references readers(id)
-);
+create index idx_ordes_date_created on ordes (date_created);
 
+create table orders_new (
+    id bigint not null,
+    amount numeric(10,2),
+    status text,
+    date_created timestamp not null,
+    customer_id int,
+    product_id int,
+    primary key (id, date_created)
+) partition by range (date_created);
 
-create table if not exists reader_rentals(
-    reader_id int not null references readers(id),
-    rental_id int not null references rentals(id),
-    primary key (reader_id, rental_id)
-);
+create table orders_2020 partition of orders_new for values from ('2020-01-01') to ('2021-01-01');
 
-drop table authors, readers, books, rentals cascade;
-drop table if exists reader_rentals cascade;
+drop table orders_new cascade;
+drop table customers, products, ordes cascade;
